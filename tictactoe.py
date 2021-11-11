@@ -2,32 +2,31 @@ import PySimpleGUI as sg
 import random
 
 # Player 1, 2
-# Computer A.I not finished yet
 
-compTurn = None
-initializing = True # player 1 = X, player 2 = O
-mode = None # 0 = vs computer, 1 = vs player
-turn = 1 # 0 = O, 1 = X ( AND PLAYER 1 STARTS FIRST )
+symbols = {1: None, 2: None}  # P1, P2. If X is player 1 then 1:"X". If X is player 2 then 2:"X". Player 2 is also COM.
+initializing = True
+mode = None  # 0 = vs computer, 1 = vs player
+turn = "X"  # Placeholder value
 layout = [
     [sg.Text("Player 1 Chooses:", key="initText"),
      sg.Text("Select gamemode:", key="initText2", visible=False)
      ],
     [
-    sg.Button("X", key="initButton", size=(4, 1)),
-    sg.Button("O", key="initButton2", size=(4,1)),
-    sg.Button("Player vs. Computer", key="initButton3", visible=False),
-    sg.Button("Player vs. Player", key="initButton4", visible=False),
-      ]
-          ]
+        sg.Button("X", key="initButton", size=(4, 1)),
+        sg.Button("O", key="initButton2", size=(4, 1)),
+        sg.Button("Player vs. Computer", key="initButton3", visible=False),
+        sg.Button("Player vs. Player", key="initButton4", visible=False),
+    ]
+]
 altLayout = [
     [sg.Text("", visible=False, key="winText")]
 ]
 availableButtons = []
-for a in range(0, 9, 3): # Make buttons for altLayout:
+for a in range(0, 9, 3):  # Make buttons for altLayout:
     row = []
     for b in range(1, 4):
-        row.append(sg.Button(" ", size=(8,5), key=a+b, disabled_button_color=("White", "Transparent")))
-        availableButtons.append(a+b)
+        row.append(sg.Button(" ", size=(8, 5), key=a + b, disabled_button_color=("White", "Transparent")))
+        availableButtons.append(a + b)
     altLayout.append(row)
 
 window = sg.Window("test", [[
@@ -40,35 +39,87 @@ grid = [
     "", "", ""
 ]
 
-def winCheck(): # returns False if no one won, else returns symbol of winner if someone won
-    for symbol in ["X", "O"]: # Check diagonal, horizontal, and vertical wins.
-        for i in range(0, 9, 3): # Horizontal test:
-            if "".join(grid[i:i+3]) == symbol*3: # XXX or OOO
+def winCheck():  # returns False if no one won, else returns symbol of winner if someone won
+    for symbol in ["X", "O"]:  # Check diagonal, horizontal, and vertical wins.
+        for i in range(0, 9, 3):  # Horizontal test:
+            if "".join(grid[i:i + 3]) == symbol * 3:  # XXX or OOO
                 return symbol
-        for i in range(0, 3): # Vertical test:
-            if grid[i]+grid[i+3]+grid[i+6] == symbol*3:
+        for i in range(0, 3):  # Vertical test:
+            if grid[i] + grid[i + 3] + grid[i + 6] == symbol * 3:
                 return symbol
-        if grid[0]+grid[4]+grid[8] == symbol*3 or grid[2]+grid[4]+grid[6] == symbol*3: # Diagonal test
+        if grid[0] + grid[4] + grid[8] == symbol * 3 or grid[2] + grid[4] + grid[6] == symbol * 3:  # Diagonal test
             return symbol
-    return False # Overall uses a lot of loops but is a very readable function. Can change to be more efficient.
-def potentialWinCheck(): # For offense just use winning move and for defense, look at winning move of opponent and move there (pretty clever).
-    wins = {"X":[], "O":[]}  # Return dictionary with how each can win (wins as array since there can be more than 1)
+    return False  # Overall uses a lot of loops but is a very readable function. Can change to be more efficient.
+
+def potentialWinCheck():  # For offense just use winning move and for defense, look at winning move of opponent and move there (pretty clever).
+    wins = {"X": [], "O": []}  # Return dictionary with how each can win (wins as array since there can be more than 1)
     for symbol in ["X", "O"]:
         opposite = [s for s in ["X", "O"] if s != symbol][0]
         for i in range(0, 9, 3):
-            currRow = grid[i:i+3]
-            if currRow.count(symbol) == 2 and opposite not in currRow: # If 2/3 are covered by you, 1/3 is covered by nothing (win condition)
-                wins[symbol].append(currRow.index("")+i) # adjust for what row you're at
+            currRow = grid[i:i + 3]
+            if currRow.count(symbol) == 2 and opposite not in currRow:  # If 2/3 are covered by you, 1/3 is covered by nothing (win condition)
+                wins[symbol].append(currRow.index("") + i)  # adjust for what row you're at
         for i in range(0, 3):
-            currRow = [grid[i], grid[i+3], grid[i+6]]
+            currRow = [grid[i], grid[i + 3], grid[i + 6]]
             if currRow.count(symbol) == 2 and opposite not in currRow:
-                wins[symbol].append((currRow.index("")*3)+i) # Math, can explain if needed
-        for i in range(0, 4, 2): # Will reach 0 and 2 only
-            indexes = [i, i+(4-i), 4+(4-i)]
-            currRow = [grid[i], grid[i+(4-i)], grid[4+(4-i)]]
+                wins[symbol].append((currRow.index("") * 3) + i)  # Math, can explain if needed
+        for i in range(0, 4, 2):  # Will reach 0 and 2 only
+            indexes = [i, i + (4 - i), 4 + (4 - i)]
+            currRow = [grid[i], grid[i + (4 - i)], grid[4 + (4 - i)]]
             if currRow.count(symbol) == 2 and opposite not in currRow:
                 wins[symbol].append(indexes[currRow.index("")])
     return wins
+
+def move(index, symbol):
+    button = window[index + 1]  # Remember button IDs are 1-9, idxes are 0-8
+    print(f"{symbol} moved to {index}")
+    button.update(text=symbol, disabled=True)
+    grid[index] = symbol  # Remember, event should be a num from 1-9 correlating to the position
+    availableButtons.remove(index + 1)
+
+def computerMove(computerSymbol, playerSymbol):  # Keep writing, FIX RANDOM ERRORS
+    moves = potentialWinCheck()
+    if moves[computerSymbol] != []:  # If you can win during your turn, take it.
+        m = moves[computerSymbol][0]  # Index to win, m instead of move in order to preserve function
+        move(m, computerSymbol)
+    elif moves[playerSymbol] != []:
+        m = moves[playerSymbol][0]
+        move(m, computerSymbol)
+    else:
+        corners = [0, 2, 6, 8]
+        availableCorners = [corner for corner in corners if corner in availableButtons]
+        if len("".join(grid)) == 1:  # If only 1 move has been made(start of game)
+            if grid.index(playerSymbol) in corners:  # If the opponent moved to any of these positions (corners)
+                m = 4
+            else:
+                m = random.choice([corner for corner in corners if corner in availableButtons])
+            move(m, computerSymbol)
+        elif len("".join(grid)) == 3 and computerSymbol == grid[4]:  # If you have moved once (P1, COM, P1) in the middle
+            safe = [i for i in (1, 3, 5, 7) if grid[i] == ""]  # Checks if spaces are occupied
+            m = random.choice(safe)
+            move(m, computerSymbol)
+        else:
+            if availableCorners != []: # Move to a corner if you can, if you can't then just move randomly
+                move(random.choice(availableCorners), computerSymbol)
+            else:
+                move(random.choice(availableButtons)-1, computerSymbol)
+
+def proceduralWinCheck():
+    global mode  # Make sure we can reassign even from within a function
+    winner = winCheck()
+    if winner != False:
+        window["winText"].update("{} WINS!".format(winner), visible=True)
+        for i in range(1, 10):  # Disable all buttons:
+            window[i].update(disabled=True)  # Make sure all of them are disabled:
+        mode = 2  # Game over mode (no code for this kind of mode)
+    if len("".join(grid)) == 9:  # If all board spaces are filled up:
+        window["winText"].update("Tie!", visible=True)  # Go after player event has occurred
+        mode = 2
+
+def printGrid():
+    for a in range(0, 9, 3):
+        print(grid[a:a + 3])
+    print("\n")
 
 while True:
     event, values = window.read()
@@ -76,9 +127,16 @@ while True:
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         break
     if initializing is True:
-        if event == "initButton" or event == "initButton2":
-            if event == "initButton2": # Chose O
-                turn = 0
+        if event == "initButton" or event == "initButton2":  # Player 1 chooses symbol
+            if event == "initButton2":  # Chose O
+                symbols[1] = "O"
+                symbols[2] = "X"
+                turn = "O"
+            else:
+                symbols[2] = "O"
+                symbols[1] = "X"
+
+
             window["initText"].update(visible=False)
             window["initText2"].update(visible=True)
 
@@ -87,72 +145,30 @@ while True:
             window["initButton3"].update(visible=True)
             window["initButton4"].update(visible=True)
         else:
-            if event == "initButton3":
-                mode = 0
-                compTurn = [opposite for opposite in [0, 1] if opposite != turn][0] # Opposite of starting turn, AKA opposite of player 1
-            if event == "initButton4":
+            if event == "initButton3":  # Chose Player v. Computer
+                mode = 0  # COM mode
+            if event == "initButton4":  # Chose Player v. Player
                 mode = 1
-            print(mode)
+            # print(mode)
             initializing = False
             window["layout"].update(visible=False)
             window["gameLayout"].update(visible=True)
-    else: # When it's engaged in game mode:
-        button = window[event]
-        if button.get_text() == " ":
-            availableButtons.remove(event)
-            if turn == 0:
-                button.update(text="O")
-                grid[event-1] = "O" # Remember, event should be a num from 1-9 correlating to the position
-                window[event].update(disabled=True)
-                turn = 1
-            elif turn == 1:
-                button.update(text="X")
-                grid[event-1] = "X"
-                window[event].update(disabled=True)
-                turn = 0
-        winner = winCheck()
-        if winner != False:
-            window["winText"].update("{} WINS!".format(winner), visible=True)
-            for i in range(1, 10): # Disable all buttons:
-                window[i].update(disabled=True) # Make sure all of them are disabled:
-            mode = 2 # Game over mode (no code for this kind of mode)
-        if len("".join(grid)) == 9: # If all board spaces are filled up:
-            window["winText"].update("Tie!", visible=True) # Go after player event has occurred
-            mode = 2
-        if mode == 0: # If it's Player vs Computer:
-            s = "" # symbol
-            if turn == 0:
-                s = "O"
-            if turn == 1:
-                s = "X"
-            opp = [x for x in ["X", "O"] if x != s][0]
-            moves = potentialWinCheck()
-            if moves[s] != []: # If you can win during your turn, take it.
-                move = moves[s][0] # Index to win
-                window[move+1].update(text=s, disabled=True)
-                availableButtons.remove(move+1)
-                grid[move] = s
-            elif moves[opp] != []: # If you can't win but can stop a loss, stop it.
-                move = moves[opp][0]
-                window[move+1].update(text=s, disabled=True)
-                availableButtons.remove(move+1)
-                grid[move] = s
-            else: # Otherwise, pick one of the buttons randomly.
-                pick = random.choice(availableButtons)
-                window[pick].update(text=s, disabled=True)
-                availableButtons.remove(pick)
-                grid[pick-1] = s
-            turn = [o for o in [0, 1] if o != turn][0]
-            for a in range(0, 9, 3):
-                print(grid[a:a+3])
-            print("\n")
-        winner = winCheck()
-        if winner != False:
-            window["winText"].update("{} WINS!".format(winner), visible=True)
-            for i in range(1, 10): # Disable all buttons:
-                window[i].update(disabled=True) # Make sure all of them are disabled:
-            mode = 2
-        if len("".join(grid)) == 9: # If all board spaces are filled up:
-            window["winText"].update("Tie!", visible=True) # Go after player event has occurred
-            mode = 2
+    else:  # When it's engaged in game mode: (Player will move)
+        if window[event].get_text() == " ":  # if the text is not X or O (empty):
+            if turn == "O":
+                move(event - 1, "O")
+                turn = "X"
+            elif turn == "X":
+                move(event - 1, "X")
+                turn = "O"
+        printGrid()
+        proceduralWinCheck()  # Check if someone has won
+        if mode == 0:  # If it's Player vs Computer: (COM moves after player)
+            computerSymbol = symbols[2]  # Remember, COM is player 2 (if it's player v. COM)
+            playerSymbol = symbols[1]  # Player 1's symbol
+            computerMove(computerSymbol, playerSymbol)
+
+            turn = [o for o in ["X", "O"] if o != turn][0]
+            printGrid()
+            proceduralWinCheck()
 window.close()
