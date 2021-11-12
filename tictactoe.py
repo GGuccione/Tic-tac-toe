@@ -37,6 +37,7 @@ altLayout[0].append(sg.Text("X:{} O:{} Ties:{}".format(record[0], record[1], rec
 altLayout[1].append(sg.Button("Retry", key="retryButton", size=(7, 2)))
 altLayout[2].append(sg.Button("Hint", key="hintButton", size=(7, 2)))
 altLayout[3].append(sg.Button("Exit", key="exitButton", size=(7, 2)))
+altLayout.append([sg.Text("{} to move".format(startingTurn), key="turnText", font=("Arial", 11))])
 window = sg.Window("test", [[
     sg.Column(layout, key="layout"), sg.Column(altLayout, key="gameLayout", visible=False)
 ]])
@@ -217,6 +218,7 @@ while True:
 
 
         else:
+            print(turn)
             if window[event].get_text() == " ":  # if the text is not X or O (empty):
                 if turn == "O":
                     move(event - 1, "O")
@@ -226,13 +228,14 @@ while True:
                 window[hintID].update(button_color="Dark Blue") # Reset hint to original color
                 hintID = None
             turn = opponent
+            window["turnText"].update("{} to move".format(turn))  # update turn text
+            print(turn)
             printGrid()
             proceduralWinCheck()  # Check if someone has won
             if mode == 0:  # If it's Player vs Computer: (COM moves after player)
                 computerSymbol = symbols[2]  # Remember, COM is player 2 (if it's player v. COM)
                 playerSymbol = symbols[1]  # Player 1's symbol
                 computerMove(computerSymbol, playerSymbol)
-
                 turn = [o for o in ["X", "O"] if o != turn][0]
                 printGrid()
                 proceduralWinCheck()
