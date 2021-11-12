@@ -5,8 +5,12 @@ import random
 
 symbols = {1: None, 2: None}  # P1, P2. If X is player 1 then 1:"X". If X is player 2 then 2:"X". Player 2 is also COM.
 initializing = True
+chosenMode = None
 mode = None  # 0 = vs computer, 1 = vs player
+startingTurn = "X"
 turn = "X"  # Placeholder value
+hintID = None
+record = [0, 0, 0] # [W, L, T] (Player has won W times, lost L times and tied T times)
 layout = [
     [sg.Text("Player 1 Chooses:", key="initText"),
      sg.Text("Select gamemode:", key="initText2", visible=False)
@@ -25,10 +29,14 @@ availableButtons = []
 for a in range(0, 9, 3):  # Make buttons for altLayout:
     row = []
     for b in range(1, 4):
-        row.append(sg.Button(" ", size=(8, 5), key=a + b, disabled_button_color=("White", "Transparent")))
+        row.append(sg.Button(" ", size=(8, 5), key=a + b, disabled_button_color=("White", "Transparent"),
+                             button_color="Dark Blue"))
         availableButtons.append(a + b)
     altLayout.append(row)
-
+altLayout[0].append(sg.Text("X:{} O:{} Ties:{}".format(record[0], record[1], record[2]), key="recordText"))
+altLayout[1].append(sg.Button("Retry", key="retryButton", size=(7, 2)))
+altLayout[2].append(sg.Button("Hint", key="hintButton", size=(7, 2)))
+altLayout[3].append(sg.Button("Exit", key="exitButton", size=(7, 2)))
 window = sg.Window("test", [[
     sg.Column(layout, key="layout"), sg.Column(altLayout, key="gameLayout", visible=False)
 ]])
@@ -73,7 +81,7 @@ def potentialWinCheck():  # For offense just use winning move and for defense, l
 def move(index, symbol):
     button = window[index + 1]  # Remember button IDs are 1-9, idxes are 0-8
     print(f"{symbol} moved to {index}")
-    button.update(text=symbol, disabled=True)
+    button.update(text=symbol, disabled=True, button_color=("Dark Blue"))
     grid[index] = symbol  # Remember, event should be a num from 1-9 correlating to the position
     availableButtons.remove(index + 1)
 
@@ -113,15 +121,44 @@ def proceduralWinCheck():
         window["winText"].update("{} WINS!".format(winner), visible=True)
         for i in range(1, 10):  # Disable all buttons:
             window[i].update(disabled=True)  # Make sure all of them are disabled:
-        mode = 2  # Game over mode (no code for this kind of mode)
+        if winner == "X":
+            record[0] += 1 # update record
+        if winner == "O":
+            record[1] += 1
+            mode = 2
     if len("".join(grid)) == 9:  # If all board spaces are filled up:
         window["winText"].update("Tie!", visible=True)  # Go after player event has occurred
-        mode = 2
+        record[2] += 1 # Add one tie to the record
+        mode = 2 # Game over mode (no code for this kind of mode)
+    window["recordText"].update("X:{} O:{} Ties:{}".format(record[0], record[1], record[2]))
 
 def printGrid():
     for a in range(0, 9, 3):
         print(grid[a:a + 3])
     print("\n")
+
+def hint(player, opponent):
+    moves = potentialWinCheck()
+    if moves[player] != []:
+        id = moves[player][0] + 1
+        # print(hintID, hintID in availableButtons)
+        button = window[id]
+        button.update(button_color=("green"))
+    elif moves[opponent] != []:
+        id = moves[opponent][0] + 1
+        button = window[id]
+        button.update(button_color="red")
+    else:
+        availableCorners = [corner for corner in [0, 2, 6, 8] if corner + 1 in availableButtons]
+        if availableCorners != []:
+            id = random.choice(availableCorners) + 1
+            button = window[id]
+            button.update(button_color="yellow")
+        else:
+            id = random.choice(availableButtons)
+            button = window[id]
+            button.update(button_color="yellow")
+    return id
 
 while True:
     event, values = window.read()
@@ -134,6 +171,7 @@ while True:
                 symbols[1] = "O"
                 symbols[2] = "X"
                 turn = "O"
+                startingTurn = "O"
             else:
                 symbols[2] = "O"
                 symbols[1] = "X"
@@ -151,26 +189,51 @@ while True:
                 mode = 0  # COM mode
             if event == "initButton4":  # Chose Player v. Player
                 mode = 1
+            chosenMode = mode
             # print(mode)
             initializing = False
             window["layout"].update(visible=False)
             window["gameLayout"].update(visible=True)
     else:  # When it's engaged in game mode: (Player will move)
-        if window[event].get_text() == " ":  # if the text is not X or O (empty):
-            if turn == "O":
-                move(event - 1, "O")
-                turn = "X"
-            elif turn == "X":
-                move(event - 1, "X")
-                turn = "O"
-        printGrid()
-        proceduralWinCheck()  # Check if someone has won
-        if mode == 0:  # If it's Player vs Computer: (COM moves after player)
-            computerSymbol = symbols[2]  # Remember, COM is player 2 (if it's player v. COM)
-            playerSymbol = symbols[1]  # Player 1's symbol
-            computerMove(computerSymbol, playerSymbol)
+        opponent = [s for s in ["X", "O"] if s != turn][0]
+        if (event == "hintButton" or event == "exitButton" or event =="retryButton"): # Stacked all of them to make it cleaner
+            if event == "hintButton" and mode != 2:
+                hintID = hint(turn, opponent)
+            if event == "exitButton":
+                window.close()
+            if event == "retryButton":
+                #print("Retry")
+                grid = ["" for x in range(0, 9)]
+                for button in range(1, 10):
+                    window[button].update(text=" ", disabled=False, button_color="Dark Blue")
+                    #print(button)
+                mode = chosenMode
+                window["winText"].update("")
+                availableButtons = [x for x in range(1, 10)]
+                turn = startingTurn
 
-            turn = [o for o in ["X", "O"] if o != turn][0]
+
+            #print(grid, mode, chosenMode)
+
+
+        else:
+            if window[event].get_text() == " ":  # if the text is not X or O (empty):
+                if turn == "O":
+                    move(event - 1, "O")
+                elif turn == "X":
+                    move(event - 1, "X")
+            if hintID != None:
+                window[hintID].update(button_color="Dark Blue") # Reset hint to original color
+                hintID = None
+            turn = opponent
             printGrid()
-            proceduralWinCheck()
+            proceduralWinCheck()  # Check if someone has won
+            if mode == 0:  # If it's Player vs Computer: (COM moves after player)
+                computerSymbol = symbols[2]  # Remember, COM is player 2 (if it's player v. COM)
+                playerSymbol = symbols[1]  # Player 1's symbol
+                computerMove(computerSymbol, playerSymbol)
+
+                turn = [o for o in ["X", "O"] if o != turn][0]
+                printGrid()
+                proceduralWinCheck()
 window.close()
