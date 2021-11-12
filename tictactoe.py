@@ -87,7 +87,7 @@ def computerMove(computerSymbol, playerSymbol):  # Keep writing, FIX RANDOM ERRO
         move(m, computerSymbol)
     else:
         corners = [0, 2, 6, 8]
-        availableCorners = [corner for corner in corners if corner in availableButtons]
+        availableCorners = [corner for corner in corners if corner+1 in availableButtons] # Corner + 1 because corner is counting from 0 and up, buttons are counting from 1 and up
         if len("".join(grid)) == 1:  # If only 1 move has been made(start of game)
             if grid.index(playerSymbol) in corners:  # If the opponent moved to any of these positions (corners)
                 m = 4
@@ -100,9 +100,11 @@ def computerMove(computerSymbol, playerSymbol):  # Keep writing, FIX RANDOM ERRO
             move(m, computerSymbol)
         else:
             if availableCorners != []: # Move to a corner if you can, if you can't then just move randomly
-                move(random.choice(availableCorners), computerSymbol)
+                move(random.choice(availableCorners), computerSymbol) # No -1 bc availableCorners is stored as indexes
             else:
                 move(random.choice(availableButtons)-1, computerSymbol)
+    #printGrid()
+    #print(availableButtons, [corner for corner in [0, 2, 6, 8] if corner+1 in availableButtons])
 
 def proceduralWinCheck():
     global mode  # Make sure we can reassign even from within a function
