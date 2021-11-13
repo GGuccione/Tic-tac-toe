@@ -167,7 +167,6 @@ while True:
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         break
     if initializing is True:
-        print(event)
         if event == "initButton" or event == "initButton2":  # Player 1 chooses symbol
             if event == "initButton2":  # Chose O
                 symbols[1] = "O"
@@ -175,7 +174,6 @@ while True:
                 turn = "O"
                 startingTurn = "O"
                 window["turnText"].update("{} to move".format(startingTurn))
-                print("{} to move".format(startingTurn))
             else:
                 symbols[2] = "O"
                 symbols[1] = "X"
