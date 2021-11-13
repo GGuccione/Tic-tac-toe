@@ -33,7 +33,7 @@ for a in range(0, 9, 3):  # Make buttons for altLayout:
                              button_color="Dark Blue"))
         availableButtons.append(a + b)
     altLayout.append(row)
-altLayout[0].append(sg.Text("X:{} O:{} Ties:{}".format(record[0], record[1], record[2]), key="recordText"))
+altLayout[0].append(sg.Text("X:{} O:{} Ties:{}".format(record[0], record[1], record[2]), key="recordText", font=("Arial", 11)))
 altLayout[1].append(sg.Button("Retry", key="retryButton", size=(7, 2)))
 altLayout[2].append(sg.Button("Hint", key="hintButton", size=(7, 2)))
 altLayout[3].append(sg.Button("Exit", key="exitButton", size=(7, 2)))
@@ -212,13 +212,9 @@ while True:
                 window["winText"].update("")
                 availableButtons = [x for x in range(1, 10)]
                 turn = startingTurn
-
-
             #print(grid, mode, chosenMode)
-
-
         else:
-            print(turn)
+            window["turnText"].update("{} to move".format(turn))  # update turn text
             if window[event].get_text() == " ":  # if the text is not X or O (empty):
                 if turn == "O":
                     move(event - 1, "O")
@@ -227,7 +223,8 @@ while True:
             if hintID != None:
                 window[hintID].update(button_color="Dark Blue") # Reset hint to original color
                 hintID = None
-            turn = opponent
+            print(turn)
+            turn = [t for t in ["X", "O"] if t != turn][0]
             window["turnText"].update("{} to move".format(turn))  # update turn text
             print(turn)
             printGrid()
@@ -237,6 +234,7 @@ while True:
                 playerSymbol = symbols[1]  # Player 1's symbol
                 computerMove(computerSymbol, playerSymbol)
                 turn = [o for o in ["X", "O"] if o != turn][0]
+                window["turnText"].update("{} to move".format(turn))  # update turn text
                 printGrid()
                 proceduralWinCheck()
 window.close()
