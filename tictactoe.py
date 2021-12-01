@@ -11,6 +11,7 @@ startingTurn = "X"
 turn = "X"  # Placeholder value
 hintID = None
 record = [0, 0, 0] # [W, L, T] (Player has won W times, lost L times and tied T times)
+
 layout = [
     [sg.Text("Player 1 Chooses:", key="initText"),
      sg.Text("Select gamemode:", key="initText2", visible=False)
@@ -97,12 +98,11 @@ def computerMove(computerSymbol, playerSymbol):  # Keep writing, FIX RANDOM ERRO
     else:
         corners = [0, 2, 6, 8]
         availableCorners = [corner for corner in corners if corner+1 in availableButtons] # Corner + 1 because corner is counting from 0 and up, buttons are counting from 1 and up
-        if len("".join(grid)) == 1:  # If only 1 move has been made(start of game)
-            if grid.index(playerSymbol) in corners:  # If the opponent moved to any of these positions (corners)
-                m = 4
+        if len("".join(grid)) == 1:# If only 1 move has been made(start of game)
+            if grid[4] == "":
+                move(4, computerSymbol)
             else:
-                m = random.choice([corner for corner in corners if corner in availableButtons])
-            move(m, computerSymbol)
+                move(random.choice(availableCorners), computerSymbol)
         elif len("".join(grid)) == 3 and computerSymbol == grid[4]:  # If you have moved once (P1, COM, P1) in the middle
             safe = [i for i in (1, 3, 5, 7) if grid[i] == ""]  # Checks if spaces are occupied
             m = random.choice(safe)
@@ -138,7 +138,7 @@ def printGrid():
         print(grid[a:a + 3])
     print("\n")
 
-def hint(player, opponent):
+def hint(player, opponent): # Finds best move
     moves = potentialWinCheck()
     if moves[player] != []:
         id = moves[player][0] + 1
